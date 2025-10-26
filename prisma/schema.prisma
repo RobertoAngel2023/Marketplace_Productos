@@ -1,0 +1,82 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/prisma"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// -------------------- MODELOS --------------------
+
+// Usuarios
+model Usuario {
+  idUsuario    Int       @id @default(autoincrement())
+  nombre       String    @db.NVarChar(100)
+  email        String    @unique @db.NVarChar(150)
+  password     String    @db.NVarChar(150)
+  carrito      Carrito?
+  compras      Compra[]
+}
+
+// Productos
+model Producto {
+  idProducto   Int       @id @default(autoincrement())
+  nombre       String    @db.NVarChar(200)
+  descripcion  String?   @db.NVarChar(500)
+  precio       Decimal   @db.Decimal(10, 2)
+  carritoProd  CarritoProducto[]
+  compras      CompraDetalle[]
+}
+
+// Carrito
+model Carrito {
+  idCarrito        Int                  @id @default(autoincrement())
+  idUsuario        Int                  @unique
+  Usuario          Usuario              @relation(fields: [idUsuario], references: [idUsuario])
+  carritoProductos CarritoProducto[]
+}
+
+// Relación muchos-a-muchos entre Carrito y Producto
+model CarritoProducto {
+  idCarritoProd Int       @id @default(autoincrement())
+  idCarrito     Int
+  idProducto    Int
+  cantidad      Int
+
+  Carrito   Carrito   @relation(fields: [idCarrito], references: [idCarrito], onUpdate: NoAction, onDelete: NoAction)
+  Producto  Producto  @relation(fields: [idProducto], references: [idProducto], onUpdate: NoAction, onDelete: NoAction)
+
+  @@unique([idCarrito, idProducto])
+}
+
+// Compras
+model Compra {
+  idCompra      Int       @id @default(autoincrement())
+  idUsuario     Int
+  fechaCompra   DateTime  @default(now())
+  total         Decimal   @db.Decimal(10, 2)
+
+  Usuario       Usuario   @relation(fields: [idUsuario], references: [idUsuario])
+  detalles      CompraDetalle[]
+}
+
+// Detalles de la compra (muchos-a-muchos entre Compra y Producto)
+model CompraDetalle {
+  idCompraDetalle Int       @id @default(autoincrement())
+  idCompra        Int
+  idProducto      Int
+  cantidad        Int
+  precioUnitario  Decimal   @db.Decimal(10, 2)
+
+  Compra   Compra    @relation(fields: [idCompra], references: [idCompra])
+  Producto Producto  @relation(fields: [idProducto], references: [idProducto])
+
+  @@unique([idCompra, idProducto])
+}
+
+
+
+
